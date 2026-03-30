@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Book App</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <style>
+        html.lenis, html.lenis body { height: auto; width: 100vw; overflow-x: hidden; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+        
+        /* Glassmorphism Classes */
+        .glass {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 h-screen flex flex-col">
+
+    <main id="scroll-container" class="flex-grow w-full overflow-y-auto pb-28 pt-4 flex justify-center items-start">
+        <canvas id="pdf-render" class="shadow-xl rounded-md max-w-full h-auto bg-white"></canvas>
+    </main>
+
+    <nav class="glass fixed bottom-0 left-0 w-full px-4 py-4 flex justify-between items-center z-40 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+        
+        <div class="flex items-center gap-3">
+            <button id="prev-page" class="p-3 rounded-full bg-gray-200/50 dark:bg-gray-700/50 hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <span class="font-mono text-sm font-medium">
+                <span id="page-num" class="w-8 inline-block text-center">0</span> / <span id="page-count">0</span>
+            </span>
+            <button id="next-page" class="p-3 rounded-full bg-gray-200/50 dark:bg-gray-700/50 hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-2 border-l border-gray-400/30 pl-4">
+            <button id="bookmark-btn" class="p-3 rounded-full hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition text-blue-600 dark:text-blue-400">
+                <svg id="bookmark-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+            </button>
+            <button id="settings-btn" class="p-3 rounded-full hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div id="settings-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden z-50 flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl w-80 shadow-2xl transform scale-95 transition-transform duration-300" id="settings-content">
+            <h2 class="text-2xl font-bold mb-6">Settings</h2>
+            
+            <div class="flex items-center justify-between mb-6">
+                <span class="font-medium">Dark Mode</span>
+                <button id="theme-toggle" class="w-12 h-6 bg-gray-300 dark:bg-blue-500 rounded-full relative transition-colors">
+                    <div id="theme-knob" class="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform transform dark:translate-x-6"></div>
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between mb-6">
+                <span class="font-medium">Zoom Level</span>
+                <input type="range" id="zoom-slider" min="0.5" max="3.0" step="0.1" value="1.2" class="w-32">
+            </div>
+
+            <button id="close-settings" class="w-full py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-bold transition">Done</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
